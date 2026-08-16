@@ -1,7 +1,10 @@
 name = "astral-notes"
-pages_build_output_dir = "dist/client"
+main = "dist/server/server.js"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist/client"
 
 [[d1_databases]]
 binding = "DB"
