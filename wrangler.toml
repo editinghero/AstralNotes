@@ -1,9 +1,9 @@
 name = "astral-notes"
-main = "src/server.ts"
+pages_build_output_dir = "dist/client"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 [[d1_databases]]
 binding = "DB"
 database_name = "astral-notes"
-database_id = "<your-d1-database-id>"
+database_id = "fec259fe-584e-4b4f-89a3-dd075a4c5472"
