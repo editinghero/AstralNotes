@@ -1,0 +1,24 @@
+{
+  "name": "Astral Notes",
+  "short_name": "Astral",
+  "description": "End-to-end encrypted Markdown notes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1116",
+  "theme_color": "#9dc4ff",
+  "icons": [
+    {
+      "src": "/icons/icon-sky.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-sky.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
