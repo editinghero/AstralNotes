@@ -18,19 +18,33 @@ if (fs.existsSync(serverDir) && fs.existsSync(clientDir)) {
 
 export default {
   async fetch(request, env, ctx) {
-    try {
-      const res = await env.ASSETS.fetch(request);
-      if (res.status !== 404) {
-        return res;
-      }
-    } catch {
-      // Fallback
+    const url = new URL(request.url);
+
+    // 1. API routes must always bypass static asset fetching and route directly to the server
+    if (url.pathname.startsWith("/api/")) {
+      return server.fetch(request, env, ctx);
     }
+
+    // 2. Only GET and HEAD requests should attempt static asset fetching
+    if (request.method === "GET" || request.method === "HEAD") {
+      try {
+        const res = await env.ASSETS.fetch(request);
+        if (res.status === 200 || res.status === 304) {
+          return res;
+        }
+      } catch {
+        // Fallback to SSR
+      }
+    }
+
+    // 3. Dynamic routes, SSR pages, mutations
     return server.fetch(request, env, ctx);
   }
 };
 `;
 
   fs.writeFileSync(path.join(clientDir, "_worker.js"), workerContent, "utf-8");
-  console.log("✓ Cloudflare Pages _worker.js generated successfully in dist/client");
+  console.log(
+    "✓ Cloudflare Pages _worker.js generated successfully in dist/client",
+  );
 }
