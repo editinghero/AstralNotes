@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KeyRound, ShieldCheck, UserX } from "lucide-react";
 import { Button, Field, Input } from "./ui-kit";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { Logo } from "./Logo";
 import type { ThemeId } from "@/lib/theme";
+import { APP_CONFIG } from "@/lib/config";
 
 export function AuthScreen({
   theme,
@@ -24,9 +25,29 @@ export function AuthScreen({
   onQuickUnlock: (password: string) => Promise<void>;
   onForgetDevice: () => void;
 }) {
-  const isSignupDisabled =
-    import.meta.env.VITE_DISABLE_SIGNUP === "true" ||
-    import.meta.env.VITE_DISABLE_SIGNUP === true;
+  const [isSignupDisabled, setIsSignupDisabled] = useState<boolean>(() => {
+    const envVal = import.meta.env.VITE_DISABLE_SIGNUP;
+    if (envVal === "false" || envVal === false) return false;
+    if (envVal === "true" || envVal === true) return true;
+    return APP_CONFIG.disableSignup;
+  });
+
+  useEffect(() => {
+    fetch("/api/public/db/get-config", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { disableSignup?: boolean } | null) => {
+        if (data && typeof data.disableSignup === "boolean") {
+          setIsSignupDisabled(data.disableSignup);
+        }
+      })
+      .catch(() => {
+        // keep initial state
+      });
+  }, []);
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [useMaster, setUseMaster] = useState(false);

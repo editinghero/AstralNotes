@@ -21,22 +21,37 @@ type D1Like = {
 
 let cached: D1Like | null | undefined;
 
+export function getRuntimeEnv(): Record<string, unknown> | undefined {
+  if (
+    typeof globalThis !== "undefined" &&
+    (globalThis as unknown as Record<string, unknown>)["__CF_ENV__"]
+  ) {
+    return (globalThis as unknown as Record<string, unknown>)[
+      "__CF_ENV__"
+    ] as Record<string, unknown>;
+  }
+  return undefined;
+}
+
 export async function isSignupDisabled(): Promise<boolean> {
   try {
-    let cloudflareEnv: Record<string, unknown> | undefined;
+    const cfEnv = getRuntimeEnv();
+    let workersEnv: Record<string, unknown> | undefined;
     try {
       const specifier = "cloudflare:workers";
       const mod = (await import(/* @vite-ignore */ specifier)) as {
         env?: Record<string, unknown>;
       };
-      cloudflareEnv = mod.env;
+      workersEnv = mod.env;
     } catch {
       /* not workers */
     }
 
     const val =
-      cloudflareEnv?.["DISABLE_SIGNUP"] ??
-      cloudflareEnv?.["VITE_DISABLE_SIGNUP"] ??
+      cfEnv?.["DISABLE_SIGNUP"] ??
+      cfEnv?.["VITE_DISABLE_SIGNUP"] ??
+      workersEnv?.["DISABLE_SIGNUP"] ??
+      workersEnv?.["VITE_DISABLE_SIGNUP"] ??
       (typeof process !== "undefined" &&
         (process.env?.["DISABLE_SIGNUP"] ??
           process.env?.["VITE_DISABLE_SIGNUP"])) ??
@@ -47,13 +62,26 @@ export async function isSignupDisabled(): Promise<boolean> {
           (globalThis as unknown as Record<string, unknown>)[
             "VITE_DISABLE_SIGNUP"
           ]));
-    return val === true || val === "true" || val === "1";
+
+    if (val === true || val === "true" || val === "1") {
+      return true;
+    }
+    if (val === false || val === "false" || val === "0") {
+      return false;
+    }
+    return false;
   } catch {
     return false;
   }
 }
 
 export async function getD1(): Promise<D1Like | null> {
+  const cfEnv = getRuntimeEnv();
+  const dbFromEnv = cfEnv?.["DB"];
+  if (dbFromEnv && typeof (dbFromEnv as D1Like).prepare === "function") {
+    return dbFromEnv as D1Like;
+  }
+
   if (cached !== undefined) return cached;
   cached = null;
 
@@ -96,6 +124,7 @@ const memory: Store = { accounts: [], notes: [], shares: [] };
 /* ------------------------------------------------------------------- queries */
 
 export type Action =
+  | "get-config"
   | "get-account"
   | "create-account"
   | "list-notes"
@@ -114,6 +143,12 @@ export async function runAction(action: Action, body: Row): Promise<unknown> {
   const now = Date.now();
 
   switch (action) {
+    case "get-config": {
+      return {
+        disableSignup: await isSignupDisabled(),
+      };
+    }
+
     case "get-account": {
       const email = str(body["email"]).toLowerCase();
       if (!email) return null;

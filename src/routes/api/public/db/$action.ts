@@ -14,6 +14,7 @@ import { runAction, type Action } from "@/lib/db/d1.server";
  */
 
 const ACTIONS = new Set<Action>([
+  "get-config",
   "get-account",
   "create-account",
   "list-notes",

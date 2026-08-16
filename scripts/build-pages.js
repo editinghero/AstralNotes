@@ -18,6 +18,14 @@ if (fs.existsSync(serverDir) && fs.existsSync(clientDir)) {
 
 export default {
   async fetch(request, env, ctx) {
+    // Inject Cloudflare Pages runtime variables and bindings into global scope for server routes
+    if (env) {
+      globalThis.__CF_ENV__ = env;
+      if (env.DB) {
+        globalThis.DB = env.DB;
+      }
+    }
+
     const url = new URL(request.url);
 
     // 1. API routes must always bypass static asset fetching and route directly to the server
