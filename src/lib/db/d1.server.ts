@@ -21,14 +21,27 @@ type D1Like = {
 
 let cached: D1Like | null | undefined;
 
-export function isSignupDisabled(): boolean {
+export async function isSignupDisabled(): Promise<boolean> {
   try {
+    let cloudflareEnv: Record<string, unknown> | undefined;
+    try {
+      const specifier = "cloudflare:workers";
+      const mod = (await import(/* @vite-ignore */ specifier)) as {
+        env?: Record<string, unknown>;
+      };
+      cloudflareEnv = mod.env;
+    } catch {
+      /* not workers */
+    }
+
     const val =
+      cloudflareEnv?.["DISABLE_SIGNUP"] ??
+      cloudflareEnv?.["VITE_DISABLE_SIGNUP"] ??
       (typeof process !== "undefined" &&
         (process.env?.["DISABLE_SIGNUP"] ??
-          process.env?.["VITE_DISABLE_SIGNUP"])) ||
+          process.env?.["VITE_DISABLE_SIGNUP"])) ??
       (typeof import.meta !== "undefined" &&
-        import.meta.env?.["VITE_DISABLE_SIGNUP"]) ||
+        import.meta.env?.["VITE_DISABLE_SIGNUP"]) ??
       (typeof globalThis !== "undefined" &&
         ((globalThis as unknown as Record<string, unknown>)["DISABLE_SIGNUP"] ??
           (globalThis as unknown as Record<string, unknown>)[
@@ -115,7 +128,7 @@ export async function runAction(action: Action, body: Row): Promise<unknown> {
     }
 
     case "create-account": {
-      if (isSignupDisabled()) {
+      if (await isSignupDisabled()) {
         throw new Error("Signups are currently disabled.");
       }
       const row = {
